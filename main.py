@@ -23,29 +23,32 @@ def find_same_rows(first_file_data: list, second_file_data: list):
 
 def append_same_data_to_oracle_db(same_data: list):
     """Добавление одинаковых значений в бд"""
-    try:
-        # Подключение к бд
-        connection = cx_Oracle.connect("User/Password@localhost:1521/service")
-        cursor = connection.cursor()
+    if len(same_data) > 0:
+        try:
+            # Подключение к бд
+            connection = cx_Oracle.connect("User/Password@localhost:1521/service")
+            cursor = connection.cursor()
 
-        # Проверка, существет ли бд, если нет -> создаем
-        is_database_exist = cursor.execute(
-            "select count(*) from ALL_TABLES where table_name='passport_data'"
-        ).fetchall()
-        if len(is_database_exist) < 0:
+            # Проверка, существет ли бд, если нет -> создаем
+            is_database_exist = cursor.execute(
+                "select count(*) from ALL_TABLES where table_name='passport_data'"
+            ).fetchall()
+            if len(is_database_exist) < 0:
+                cursor.execute(
+                    "create table passport_data(empid integer primary key, series varchar2(4), numbers varchar2(6))"
+                )
+
+            # Добавление всех записей в бд
             cursor.execute(
-                "create table passport_data(empid integer primary key, series varchar2(4), numbers varchar2(6))"
+                f"insert into passport_data(series, numbers) values {', '.join(map(str, same_data))}"
             )
 
-        # Добавление всех записей в бд
-        cursor.execute(
-            f"insert into passport_data(series, numbers) values {', '.join(map(str, same_data))}"
-        )
+            print("Data added successfully")
 
-        print("Data added successfully")
-
-    except Exception as e:
-        print("Error with database: ", str(e))
+        except Exception as e:
+            print("Error with database: ", str(e))
+    else:
+        print("No same data")
 
 
 if __name__ == "__main__":
